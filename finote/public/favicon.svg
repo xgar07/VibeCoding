@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <rect width="48" height="48" rx="12" fill="url(#grad)"/>
+  <defs>
+    <linearGradient id="grad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <!-- Wallet icon simplified -->
+  <rect x="10" y="16" width="28" height="18" rx="3" fill="white" fill-opacity="0.2" stroke="white" stroke-width="1.5"/>
+  <rect x="10" y="16" width="28" height="6" rx="3" fill="white" fill-opacity="0.3"/>
+  <circle cx="30" cy="25" r="2.5" fill="white"/>
+  <path d="M14 12 L24 8 L34 12" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+</svg>
