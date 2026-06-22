@@ -7,6 +7,8 @@ import { SAVINGS_COLORS } from '../utils/categories'
 import Modal from '../components/common/Modal'
 import ConfirmDialog from '../components/common/ConfirmDialog'
 import LoadingSpinner from '../components/common/LoadingSpinner'
+import EmptyState from '../components/common/EmptyState'
+import { GoalCardSkeleton } from '../components/common/SkeletonLoader'
 import toast from 'react-hot-toast'
 import { differenceInDays, parseISO } from 'date-fns'
 
@@ -20,7 +22,6 @@ const SavingGoalForm = ({ initialData, onSubmit, onCancel, loading }) => {
   })
 
   const handleChange = (e) => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
-
   const handleAmountChange = (field) => (e) => {
     const val = e.target.value.replace(/[^0-9]/g, '')
     setForm(prev => ({ ...prev, [field]: val }))
@@ -41,52 +42,52 @@ const SavingGoalForm = ({ initialData, onSubmit, onCancel, loading }) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-2">Nama Target <span className="text-red-400">*</span></label>
+        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
+          Nama Target <span className="text-red-400">*</span>
+        </label>
         <input type="text" name="title" value={form.title} onChange={handleChange}
           placeholder="Contoh: Beli HP baru" className="input-field" autoFocus />
       </div>
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-2">Target Nominal <span className="text-red-400">*</span></label>
+        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
+          Target Nominal <span className="text-red-400">*</span>
+        </label>
         <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">Rp</span>
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--text-muted)' }}>Rp</span>
           <input type="text" value={form.target_amount ? parseInt(form.target_amount).toLocaleString('id-ID') : ''}
             onChange={handleAmountChange('target_amount')} placeholder="0" className="input-field pl-10" />
         </div>
       </div>
       {!initialData && (
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">Dana Awal (opsional)</label>
+          <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Dana Awal (opsional)</label>
           <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">Rp</span>
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--text-muted)' }}>Rp</span>
             <input type="text" value={form.current_amount ? parseInt(form.current_amount).toLocaleString('id-ID') : ''}
               onChange={handleAmountChange('current_amount')} placeholder="0" className="input-field pl-10" />
           </div>
         </div>
       )}
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-2">Deadline (opsional)</label>
-        <input type="date" name="deadline" value={form.deadline} onChange={handleChange}
-          className="input-field" style={{ colorScheme: 'dark' }} />
+        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Deadline (opsional)</label>
+        <input type="date" name="deadline" value={form.deadline} onChange={handleChange} className="input-field" />
       </div>
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-2">Warna</label>
+        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Warna</label>
         <div className="flex gap-2 flex-wrap">
           {SAVINGS_COLORS.map(c => (
             <button key={c.value} type="button" onClick={() => setForm(prev => ({ ...prev, color: c.value }))}
-              className={`w-8 h-8 rounded-full transition-all duration-150 ${form.color === c.value ? 'ring-2 ring-white ring-offset-2 ring-offset-dark-200 scale-110' : 'hover:scale-105'}`}
-              style={{ background: c.value }} title={c.label} />
+              className={`w-8 h-8 rounded-full transition-all duration-150 ${form.color === c.value ? 'ring-2 ring-white ring-offset-2 scale-110' : 'hover:scale-105'}`}
+              style={{ background: c.value, ringOffsetColor: 'var(--bg-card)' }} title={c.label} />
           ))}
         </div>
       </div>
       <div className="flex gap-3 pt-2">
         <button type="button" onClick={onCancel} className="btn-secondary flex-1">Batal</button>
         <button type="submit" className="btn-primary flex-1" disabled={!form.title || !form.target_amount || loading}>
-          {loading ? (
-            <span className="flex items-center justify-center gap-2">
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Menyimpan...
-            </span>
-          ) : initialData ? 'Perbarui' : 'Buat Target'}
+          {loading
+            ? <span className="flex items-center justify-center gap-2"><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan...</span>
+            : initialData ? 'Perbarui' : 'Buat Target'}
         </button>
       </div>
     </form>
@@ -98,20 +99,20 @@ const AddFundsForm = ({ goal, onSubmit, onCancel, loading }) => {
   const remaining = goal.target_amount - goal.current_amount
   return (
     <div className="space-y-4">
-      <div className="glass-card-light p-4 rounded-xl">
-        <div className="flex justify-between text-sm mb-2">
-          <span className="text-slate-400">Terkumpul</span>
-          <span className="text-slate-200 font-medium">{formatCurrency(goal.current_amount)}</span>
+      <div className="rounded-xl p-4 space-y-2" style={{ background: 'var(--bg-surface)' }}>
+        <div className="flex justify-between text-sm">
+          <span style={{ color: 'var(--text-muted)' }}>Terkumpul</span>
+          <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{formatCurrency(goal.current_amount)}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-slate-400">Sisa</span>
+          <span style={{ color: 'var(--text-muted)' }}>Sisa</span>
           <span className="text-amber-400 font-medium">{formatCurrency(remaining)}</span>
         </div>
       </div>
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-2">Tambah Dana</label>
+        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Tambah Dana</label>
         <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">Rp</span>
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--text-muted)' }}>Rp</span>
           <input type="text"
             value={amount ? parseInt(amount).toLocaleString('id-ID') : ''}
             onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ''))}
@@ -124,11 +125,7 @@ const AddFundsForm = ({ goal, onSubmit, onCancel, loading }) => {
           onClick={() => onSubmit(parseInt(amount))}
           className="btn-primary flex-1" disabled={!amount || parseInt(amount) <= 0 || loading}
         >
-          {loading ? (
-            <span className="flex items-center justify-center gap-2">
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            </span>
-          ) : 'Tambahkan 💰'}
+          {loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Tambahkan 💰'}
         </button>
       </div>
     </div>
@@ -148,12 +145,8 @@ const Savings = () => {
     setFormLoading(true)
     const result = editData ? await updateGoal(editData.id, data) : await addGoal(data)
     setFormLoading(false)
-    if (result.error) {
-      toast.error('Gagal menyimpan')
-    } else {
-      toast.success(editData ? 'Target diperbarui!' : 'Target tabungan dibuat! 🎯')
-      setShowModal(false); setEditData(null)
-    }
+    if (result.error) { toast.error('Gagal menyimpan') }
+    else { toast.success(editData ? 'Target diperbarui!' : 'Target tabungan dibuat! 🎯'); setShowModal(false); setEditData(null) }
   }
 
   const handleAddFunds = async (amount) => {
@@ -178,57 +171,61 @@ const Savings = () => {
     setDeleteId(null)
   }
 
-  if (loading) return <LoadingSpinner />
-
   return (
-    <div className="space-y-6">
+    <div className="page-container">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
-            <PiggyBank className="text-amber-400" size={24} />
+          <h1 className="page-title flex items-center gap-2">
+            <PiggyBank className="text-amber-400" size={22} />
             Tabungan
           </h1>
-          <p className="text-slate-400 text-sm mt-0.5">Wujudkan impianmu satu langkah</p>
+          <p className="page-subtitle mt-0.5">Wujudkan impianmu satu langkah</p>
         </div>
-        <button onClick={() => { setEditData(null); setShowModal(true) }} className="btn-primary flex items-center gap-2 self-start">
-          <Plus size={16} /> Buat Target
+        <button onClick={() => { setEditData(null); setShowModal(true) }} className="btn-primary self-start">
+          <Plus size={15} /> Buat Target
         </button>
       </div>
 
       {/* Summary */}
-      <div className="glass-card p-5 bg-gradient-to-br from-amber-500/10 to-orange-600/5 border border-amber-500/20">
-        <p className="text-slate-400 text-sm">Total Dana Terkumpul</p>
-        <p className="text-3xl font-bold text-amber-400 mt-1 tabular-nums">{formatCurrency(totalSaved)}</p>
-        <p className="text-xs text-slate-500 mt-1">{goals.length} target aktif</p>
+      <div className="card p-4 sm:p-5" style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.08), var(--bg-card))', borderColor: 'rgba(245,158,11,0.25)' }}>
+        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Total Dana Terkumpul</p>
+        <p className="text-2xl sm:text-3xl font-bold text-amber-400 mt-1 tabular-nums">{formatCurrency(totalSaved)}</p>
+        <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{goals.length} target aktif</p>
       </div>
 
       {/* Goals Grid */}
-      {goals.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[...Array(2)].map((_, i) => <GoalCardSkeleton key={i} />)}
+        </div>
+      ) : goals.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {goals.map((goal) => {
             const progress = goal.target_amount > 0
               ? Math.min((goal.current_amount / goal.target_amount) * 100, 100) : 0
             const isCompleted = progress >= 100
             const remaining = goal.target_amount - goal.current_amount
-            const daysLeft = goal.deadline
-              ? differenceInDays(parseISO(goal.deadline), new Date()) : null
+            const daysLeft = goal.deadline ? differenceInDays(parseISO(goal.deadline), new Date()) : null
 
             return (
-              <div key={goal.id} className="glass-card p-5 hover:shadow-card-hover transition-all duration-300">
+              <div key={goal.id} className="card p-4 sm:p-5 hover:shadow-card transition-all duration-200">
+                {/* Card Header */}
                 <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
                     <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: goal.color }} />
-                    <h3 className="font-semibold text-slate-100">{goal.title}</h3>
+                    <h3 className="font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{goal.title}</h3>
                     {isCompleted && (
-                      <span className="badge bg-green-500/15 text-green-400 text-xs">✅ Tercapai!</span>
+                      <span className="badge bg-green-500/15 text-green-400 text-[10px] flex-shrink-0">✅ Tercapai</span>
                     )}
                   </div>
-                  <div className="flex gap-1">
-                    <button onClick={() => { setEditData(goal); setShowModal(true) }} className="btn-icon">
-                      <Edit2 size={13} />
-                    </button>
+                  <div className="flex gap-1 flex-shrink-0 ml-2">
+                    <button onClick={() => { setEditData(goal); setShowModal(true) }} className="btn-icon"><Edit2 size={13} /></button>
                     <button onClick={() => setDeleteId(goal.id)}
-                      className="p-2 rounded-xl text-slate-500 hover:bg-red-500/10 hover:text-red-400 transition-all">
+                      className="p-2 rounded-xl transition-all"
+                      style={{ color: 'var(--text-muted)' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.color = '#F87171' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)' }}>
                       <Trash2 size={13} />
                     </button>
                   </div>
@@ -237,40 +234,37 @@ const Savings = () => {
                 {/* Progress */}
                 <div className="mb-3">
                   <div className="flex justify-between text-sm mb-2">
-                    <span className="text-slate-300 font-medium tabular-nums">{formatCurrency(goal.current_amount)}</span>
-                    <span className="text-slate-500 tabular-nums">{formatCurrency(goal.target_amount)}</span>
+                    <span className="font-medium tabular-nums" style={{ color: 'var(--text-primary)' }}>{formatCurrency(goal.current_amount)}</span>
+                    <span className="tabular-nums" style={{ color: 'var(--text-muted)' }}>{formatCurrency(goal.target_amount)}</span>
                   </div>
                   <div className="progress-bar">
-                    <div
-                      className="progress-fill"
-                      style={{ width: `${progress}%`, background: isCompleted ? '#22C55E' : goal.color }}
-                    />
+                    <div className="progress-fill" style={{ width: `${progress}%`, background: isCompleted ? '#22C55E' : goal.color }} />
                   </div>
                   <div className="flex justify-between mt-1.5">
-                    <span className="text-xs text-slate-500">{progress.toFixed(1)}% tercapai</span>
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{progress.toFixed(1)}% tercapai</span>
                     {!isCompleted && (
-                      <span className="text-xs text-slate-500">Sisa {formatCurrency(remaining, true)}</span>
+                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Sisa {formatCurrency(remaining, true)}</span>
                     )}
                   </div>
                 </div>
 
-                {/* Meta */}
-                <div className="flex items-center justify-between">
-                  <div className="text-xs text-slate-500">
+                {/* Footer */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-xs min-w-0">
                     {daysLeft !== null && (
-                      <span className={daysLeft < 0 ? 'text-red-400' : daysLeft < 30 ? 'text-amber-400' : ''}>
+                      <span className={daysLeft < 0 ? 'text-red-400' : daysLeft < 30 ? 'text-amber-400' : ''} style={{ color: daysLeft >= 30 ? 'var(--text-muted)' : undefined }}>
                         {daysLeft < 0 ? `${Math.abs(daysLeft)} hari terlambat` : `${daysLeft} hari lagi`}
-                        {goal.deadline && ` · ${formatDate(goal.deadline, 'd MMM yyyy')}`}
+                        {goal.deadline && ` · ${formatDate(goal.deadline, 'd MMM')}`}
                       </span>
                     )}
                   </div>
                   {!isCompleted && (
                     <button
                       onClick={() => setAddFundsGoal(goal)}
-                      className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all"
+                      className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all flex-shrink-0"
                       style={{ background: `${goal.color}20`, color: goal.color }}
                     >
-                      <PlusCircle size={13} />
+                      <PlusCircle size={12} />
                       Tambah Dana
                     </button>
                   )}
@@ -280,13 +274,8 @@ const Savings = () => {
           })}
         </div>
       ) : (
-        <div className="glass-card empty-state">
-          <PiggyBank size={48} className="text-slate-700 mb-3" />
-          <p className="text-slate-400 font-medium">Belum ada target tabungan</p>
-          <p className="text-slate-600 text-sm mt-1">Mulai buat target dan wujudkan impianmu!</p>
-          <button onClick={() => setShowModal(true)} className="mt-5 btn-primary flex items-center gap-2">
-            <Target size={16} /> Buat Target Pertama
-          </button>
+        <div className="card">
+          <EmptyState variant="savings" onCta={() => setShowModal(true)} />
         </div>
       )}
 

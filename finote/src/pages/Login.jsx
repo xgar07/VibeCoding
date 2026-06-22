@@ -35,7 +35,7 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen bg-dark-200 flex items-center justify-center p-4">
+    <div className="min-h-dvh flex items-center justify-center p-4" style={{ background: 'var(--bg-primary)' }}>
       {/* Background gradient blobs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
@@ -49,16 +49,16 @@ const Login = () => {
             <Wallet size={26} className="text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gradient-primary">Finote</h1>
-          <p className="text-slate-400 mt-1">Masuk ke akun kamu</p>
+          <p className="mt-1" style={{ color: 'var(--text-secondary)' }}>Masuk ke akun kamu</p>
         </div>
 
         {/* Card */}
-        <div className="glass-card p-7 shadow-card">
+        <div className="card p-6 sm:p-7 shadow-card">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Email</label>
+              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Email</label>
               <div className="relative">
-                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
                 <input
                   type="email"
                   name="email"
@@ -72,9 +72,9 @@ const Login = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Password</label>
+              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Password</label>
               <div className="relative">
-                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
                 <input
                   type={showPass ? 'text' : 'password'}
                   name="password"
@@ -87,7 +87,7 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 transition-colors" style={{ color: 'var(--text-muted)' }}
                 >
                   {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -109,16 +109,16 @@ const Login = () => {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-slate-400 text-sm">
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
               Belum punya akun?{' '}
-              <Link to="/register" className="text-primary hover:text-primary-400 font-medium transition-colors">
+              <Link to="/register" className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors">
                 Daftar sekarang
               </Link>
             </p>
           </div>
         </div>
 
-        <p className="text-center text-slate-600 text-xs mt-6">
+        <p className="text-center text-xs mt-6" style={{ color: 'var(--text-muted)' }}>
           © 2025 Finote. Kelola keuanganmu dengan cerdas.
         </p>
       </div>

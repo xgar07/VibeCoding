@@ -234,6 +234,19 @@
   .section-title { @apply text-base sm:text-lg font-semibold; color: var(--text-primary); }
   .section-sub { @apply text-xs; color: var(--text-muted); }
 
+  /* Stat card */
+  .stat-card {
+    @apply card p-4 sm:p-5;
+  }
+
+  /* Danger button */
+  .btn-danger {
+    @apply flex items-center justify-center gap-2 font-semibold px-5 py-2.5 rounded-xl text-sm transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+    background: #EF4444;
+    color: #fff;
+  }
+  .btn-danger:hover { background: #DC2626; }
+
   /* Page container */
   .page-container { @apply space-y-5 sm:space-y-6; }
   .page-title {

@@ -7,10 +7,10 @@ const LoadingSpinner = ({ fullscreen = false, size = 'md' }) => {
 
   if (fullscreen) {
     return (
-      <div className="fixed inset-0 bg-dark-200 flex items-center justify-center z-50">
+      <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
         <div className="flex flex-col items-center gap-4">
-          <div className={`${sizeClass} border-primary/30 border-t-primary rounded-full animate-spin`} />
-          <span className="text-slate-400 text-sm font-medium">Memuat...</span>
+          <div className={`${sizeClass} border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin`} />
+          <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Memuat...</span>
         </div>
       </div>
     )
@@ -18,7 +18,7 @@ const LoadingSpinner = ({ fullscreen = false, size = 'md' }) => {
 
   return (
     <div className="flex items-center justify-center py-12">
-      <div className={`${sizeClass} border-primary/30 border-t-primary rounded-full animate-spin`} />
+      <div className={`${sizeClass} border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin`} />
     </div>
   )
 }

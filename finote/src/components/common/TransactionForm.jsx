@@ -53,11 +53,11 @@ const TransactionForm = ({ type = 'expense', initialData = null, onSubmit, onCan
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Amount */}
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-2">
+        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
           Nominal <span className="text-red-400">*</span>
         </label>
         <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm">Rp</span>
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 font-medium text-sm" style={{ color: 'var(--text-muted)' }}>Rp</span>
           <input
             type="text"
             name="amount"
@@ -72,7 +72,7 @@ const TransactionForm = ({ type = 'expense', initialData = null, onSubmit, onCan
 
       {/* Category */}
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-2">
+        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
           Kategori <span className="text-red-400">*</span>
         </label>
         <div className="grid grid-cols-3 gap-2">
@@ -81,11 +81,9 @@ const TransactionForm = ({ type = 'expense', initialData = null, onSubmit, onCan
               key={cat.value}
               type="button"
               onClick={() => setForm(prev => ({ ...prev, category: cat.value }))}
-              className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl border transition-all duration-150 text-xs
-                ${form.category === cat.value
-                  ? `${cat.bg} border-current ${cat.text} shadow-sm`
-                  : 'border-slate-700 text-slate-500 hover:border-slate-600 hover:text-slate-400'
-                }`}
+              className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl border-2 transition-all duration-150 text-xs
+                ${form.category === cat.value ? `${cat.bg} ${cat.text}` : ''}`}
+              style={form.category !== cat.value ? { borderColor: 'var(--border-strong)', color: 'var(--text-muted)' } : undefined}
             >
               <span className="text-lg">{cat.icon}</span>
               <span className="font-medium leading-none text-center">{cat.label}</span>
@@ -96,9 +94,9 @@ const TransactionForm = ({ type = 'expense', initialData = null, onSubmit, onCan
 
       {/* Description */}
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-2">Keterangan</label>
+        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Keterangan</label>
         <div className="relative">
-          <FileText size={15} className="absolute left-3.5 top-3.5 text-slate-500" />
+          <FileText size={15} className="absolute left-3.5 top-3.5" style={{ color: 'var(--text-muted)' }} />
           <textarea
             name="description"
             value={form.description}
@@ -112,11 +110,11 @@ const TransactionForm = ({ type = 'expense', initialData = null, onSubmit, onCan
 
       {/* Date */}
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-2">
+        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
           Tanggal <span className="text-red-400">*</span>
         </label>
         <div className="relative">
-          <Calendar size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+          <Calendar size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
           <input
             type="date"
             name="date"

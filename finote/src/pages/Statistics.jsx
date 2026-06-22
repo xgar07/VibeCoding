@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { BarChart3, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { BarChart3, TrendingUp, TrendingDown } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Legend
@@ -7,8 +7,9 @@ import {
 import { useAllTransactions } from '../hooks/useTransactions'
 import { formatCurrency } from '../utils/formatCurrency'
 import { getLast6Months } from '../utils/dateHelpers'
-import { getCategoryInfo, EXPENSE_CATEGORIES } from '../utils/categories'
-import LoadingSpinner from '../components/common/LoadingSpinner'
+import { getCategoryInfo } from '../utils/categories'
+import EmptyState from '../components/common/EmptyState'
+import { ChartSkeleton, StatCardSkeleton } from '../components/common/SkeletonLoader'
 import { parseISO, isWithinInterval, startOfMonth, endOfMonth } from 'date-fns'
 
 const COLORS = ['#6366F1', '#8B5CF6', '#22C55E', '#F59E0B', '#3B82F6', '#EC4899', '#EF4444', '#06B6D4']
@@ -16,13 +17,13 @@ const COLORS = ['#6366F1', '#8B5CF6', '#22C55E', '#F59E0B', '#3B82F6', '#EC4899'
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
   return (
-    <div className="glass-card px-4 py-3 text-xs border border-white/10 shadow-card">
-      <p className="text-slate-400 mb-2 font-medium">{label}</p>
+    <div className="card px-3 py-2.5 text-xs shadow-card" style={{ border: '1px solid var(--border-strong)' }}>
+      <p className="mb-1.5 font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</p>
       {payload.map((p) => (
-        <div key={p.dataKey} className="flex items-center gap-2 mb-1">
+        <div key={p.dataKey} className="flex items-center gap-2 mb-0.5">
           <div className="w-2 h-2 rounded-full" style={{ background: p.color }} />
-          <span className="text-slate-300">{p.name}: </span>
-          <span className="font-semibold text-slate-100">{formatCurrency(p.value, true)}</span>
+          <span style={{ color: 'var(--text-secondary)' }}>{p.name}: </span>
+          <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{formatCurrency(p.value, true)}</span>
         </div>
       ))}
     </div>
@@ -31,63 +32,49 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 const Statistics = () => {
   const { allTransactions, loading } = useAllTransactions()
-
   const months = getLast6Months()
   const now = new Date()
 
   const { monthlyData, catData, lineData, totals, thisMonth, prevMonth } = useMemo(() => {
-    // Monthly bar data
+    const inRange = (tx, start, end) => {
+      try { return isWithinInterval(parseISO(tx.date), { start, end }) }
+      catch { return false }
+    }
+
     const monthlyData = months.map(m => {
-      const txs = allTransactions.filter(t => {
-        try { return isWithinInterval(parseISO(t.date), { start: m.start, end: m.end }) }
-        catch { return false }
-      })
+      const txs = allTransactions.filter(t => inRange(t, m.start, m.end))
       const income = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
       const expenses = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
-      return { name: m.label, Pemasukan: income, Pengeluaran: expenses, Surplus: income - expenses }
+      return { name: m.label, Pemasukan: income, Pengeluaran: expenses }
     })
 
-    // Category pie for this month
-    const thisMTxs = allTransactions.filter(t => {
-      try { return t.type === 'expense' && isWithinInterval(parseISO(t.date), { start: startOfMonth(now), end: endOfMonth(now) }) }
-      catch { return false }
-    })
+    const thisMTxs = allTransactions.filter(t =>
+      t.type === 'expense' && inRange(t, startOfMonth(now), endOfMonth(now))
+    )
     const catMap = {}
     thisMTxs.forEach(t => { catMap[t.category] = (catMap[t.category] || 0) + t.amount })
     const catData = Object.entries(catMap)
       .map(([cat, val]) => ({ name: getCategoryInfo(cat, 'expense').label, value: val, cat }))
       .sort((a, b) => b.value - a.value)
 
-    // Line chart (balance over months)
     let running = 0
     const lineData = months.map(m => {
-      const txs = allTransactions.filter(t => {
-        try { return isWithinInterval(parseISO(t.date), { start: m.start, end: m.end }) }
-        catch { return false }
-      })
+      const txs = allTransactions.filter(t => inRange(t, m.start, m.end))
       const income = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
       const expenses = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
       running += income - expenses
       return { name: m.label, Saldo: running }
     })
 
-    // Totals
     const totals = {
       income: allTransactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0),
       expenses: allTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0),
     }
 
-    // This month vs prev month
-    const thisMonthTxs = allTransactions.filter(t => {
-      try { return isWithinInterval(parseISO(t.date), { start: startOfMonth(now), end: endOfMonth(now) }) }
-      catch { return false }
-    })
-    const prevMonthStart = startOfMonth(new Date(now.getFullYear(), now.getMonth() - 1))
-    const prevMonthEnd = endOfMonth(prevMonthStart)
-    const prevMonthTxs = allTransactions.filter(t => {
-      try { return isWithinInterval(parseISO(t.date), { start: prevMonthStart, end: prevMonthEnd }) }
-      catch { return false }
-    })
+    const thisMonthTxs = allTransactions.filter(t => inRange(t, startOfMonth(now), endOfMonth(now)))
+    const prevStart = startOfMonth(new Date(now.getFullYear(), now.getMonth() - 1))
+    const prevMonthTxs = allTransactions.filter(t => inRange(t, prevStart, endOfMonth(prevStart)))
+
     const thisMonth = {
       income: thisMonthTxs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0),
       expenses: thisMonthTxs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0),
@@ -105,154 +92,185 @@ const Statistics = () => {
   const expenseChange = prevMonth.expenses > 0
     ? (((thisMonth.expenses - prevMonth.expenses) / prevMonth.expenses) * 100).toFixed(1) : null
 
-  if (loading) return <LoadingSpinner />
+  const yTickFmt = (v) => v >= 1_000_000 ? `${(v / 1_000_000).toFixed(0)}Jt` : `${(v / 1000).toFixed(0)}Rb`
+
+  if (loading) {
+    return (
+      <div className="page-container">
+        <div className="skeleton h-7 w-36 rounded-lg" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[...Array(4)].map((_, i) => <StatCardSkeleton key={i} />)}
+        </div>
+        <ChartSkeleton height={220} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <ChartSkeleton height={180} />
+          <ChartSkeleton height={180} />
+        </div>
+      </div>
+    )
+  }
+
+  const hasData = allTransactions.length > 0
 
   return (
-    <div className="space-y-6">
+    <div className="page-container">
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
-          <BarChart3 className="text-primary" size={24} />
+        <h1 className="page-title flex items-center gap-2">
+          <BarChart3 className="text-indigo-400" size={22} />
           Statistik
         </h1>
-        <p className="text-slate-400 text-sm mt-0.5">Analisis mendalam keuanganmu</p>
+        <p className="page-subtitle mt-0.5">Analisis mendalam keuanganmu</p>
       </div>
 
-      {/* Summary Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: 'Total Pemasukan', value: totals.income, color: 'text-green-400', bg: 'from-green-500/10 to-emerald-600/5', border: 'border-green-500/20', icon: TrendingUp, iconColor: 'text-green-400' },
-          { label: 'Total Pengeluaran', value: totals.expenses, color: 'text-red-400', bg: 'from-red-500/10 to-rose-600/5', border: 'border-red-500/20', icon: TrendingDown, iconColor: 'text-red-400' },
-          { label: 'Pemasukan Bulan Ini', value: thisMonth.income, color: 'text-green-400', change: incomeChange, bg: 'from-indigo-500/10 to-purple-600/5', border: 'border-indigo-500/20', icon: TrendingUp, iconColor: 'text-indigo-400' },
-          { label: 'Pengeluaran Bulan Ini', value: thisMonth.expenses, color: 'text-red-400', change: expenseChange, bg: 'from-amber-500/10 to-orange-600/5', border: 'border-amber-500/20', icon: TrendingDown, iconColor: 'text-amber-400' },
-        ].map((s, i) => (
-          <div key={i} className={`glass-card p-4 bg-gradient-to-br ${s.bg} border ${s.border}`}>
-            <div className="flex items-center justify-between mb-2">
-              <s.icon size={16} className={s.iconColor} />
-              {s.change !== null && s.change !== undefined && (
-                <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${parseFloat(s.change) >= 0 ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
-                  {parseFloat(s.change) >= 0 ? '↑' : '↓'} {Math.abs(s.change)}%
-                </span>
+      {!hasData ? (
+        <div className="card">
+          <EmptyState variant="statistics" />
+        </div>
+      ) : (
+        <>
+          {/* Summary Row */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { label: 'Total Pemasukan', value: totals.income, color: 'text-green-400', accent: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.2)', icon: TrendingUp, iconColor: '#22C55E' },
+              { label: 'Total Pengeluaran', value: totals.expenses, color: 'text-red-400', accent: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)', icon: TrendingDown, iconColor: '#EF4444' },
+              { label: 'Pemasukan Bulan Ini', value: thisMonth.income, color: 'text-indigo-400', accent: 'rgba(99,102,241,0.08)', border: 'rgba(99,102,241,0.2)', icon: TrendingUp, iconColor: '#818CF8', change: incomeChange },
+              { label: 'Pengeluaran Bulan Ini', value: thisMonth.expenses, color: 'text-amber-400', accent: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', icon: TrendingDown, iconColor: '#FCD34D', change: expenseChange },
+            ].map((s, i) => (
+              <div key={i} className="card p-4" style={{ background: s.accent, borderColor: s.border }}>
+                <div className="flex items-center justify-between mb-2">
+                  <s.icon size={15} style={{ color: s.iconColor }} />
+                  {s.change != null && (
+                    <span className={`text-xs font-medium px-1.5 py-0.5 rounded-lg ${parseFloat(s.change) >= 0 ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                      {parseFloat(s.change) >= 0 ? '↑' : '↓'} {Math.abs(s.change)}%
+                    </span>
+                  )}
+                </div>
+                <p className={`text-lg sm:text-xl font-bold tabular-nums ${s.color}`}>{formatCurrency(s.value, true)}</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Bar Chart */}
+          <div className="card p-4 sm:p-5">
+            <h2 className="text-sm sm:text-base font-semibold mb-0.5" style={{ color: 'var(--text-primary)' }}>Pemasukan vs Pengeluaran</h2>
+            <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>Perbandingan 6 bulan terakhir</p>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={monthlyData} margin={{ top: 5, right: 0, bottom: 0, left: 0 }} barCategoryGap="30%">
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 9, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false}
+                  tickFormatter={yTickFmt} width={36} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                <Bar dataKey="Pemasukan" fill="#6366F1" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="Pengeluaran" fill="#EF4444" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Line + Pie — stack on mobile */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Line Chart */}
+            <div className="card p-4 sm:p-5">
+              <h2 className="text-sm font-semibold mb-0.5" style={{ color: 'var(--text-primary)' }}>Tren Saldo</h2>
+              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>Akumulasi 6 bulan terakhir</p>
+              <ResponsiveContainer width="100%" height={180}>
+                <LineChart data={lineData} margin={{ top: 5, right: 0, bottom: 0, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 9, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false}
+                    tickFormatter={yTickFmt} width={36} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line type="monotone" dataKey="Saldo" stroke="#22C55E" strokeWidth={2.5}
+                    dot={{ r: 3.5, fill: '#22C55E', strokeWidth: 0 }}
+                    activeDot={{ r: 5, fill: '#22C55E' }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Pie Chart */}
+            <div className="card p-4 sm:p-5">
+              <h2 className="text-sm font-semibold mb-0.5" style={{ color: 'var(--text-primary)' }}>Kategori Pengeluaran</h2>
+              <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Bulan ini</p>
+              {catData.length > 0 ? (
+                <div className="flex gap-3 items-center">
+                  <div className="flex-shrink-0">
+                    <ResponsiveContainer width={130} height={130}>
+                      <PieChart>
+                        <Pie data={catData} cx="50%" cy="50%" innerRadius={36} outerRadius={58}
+                          paddingAngle={3} dataKey="value" strokeWidth={0}>
+                          {catData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                        </Pie>
+                        <Tooltip content={<CustomTooltip />} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex-1 space-y-2 overflow-y-auto max-h-[130px] min-w-0">
+                    {catData.map((d, i) => {
+                      const total = catData.reduce((s, c) => s + c.value, 0)
+                      const pct = total > 0 ? ((d.value / total) * 100).toFixed(0) : 0
+                      return (
+                        <div key={d.name}>
+                          <div className="flex items-center justify-between mb-0.5">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
+                              <span className="text-xs truncate" style={{ color: 'var(--text-secondary)' }}>{d.name}</span>
+                            </div>
+                            <span className="text-xs flex-shrink-0 ml-1" style={{ color: 'var(--text-muted)' }}>{pct}%</span>
+                          </div>
+                          <div className="progress-bar h-1">
+                            <div className="progress-fill" style={{ width: `${pct}%`, background: COLORS[i % COLORS.length] }} />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-32 text-sm" style={{ color: 'var(--text-muted)' }}>
+                  Belum ada pengeluaran bulan ini
+                </div>
               )}
             </div>
-            <p className={`text-xl font-bold tabular-nums ${s.color}`}>{formatCurrency(s.value, true)}</p>
-            <p className="text-xs text-slate-500 mt-0.5">{s.label}</p>
           </div>
-        ))}
-      </div>
 
-      {/* Bar Chart */}
-      <div className="glass-card p-5">
-        <h2 className="text-base font-semibold text-slate-100 mb-1">Pemasukan vs Pengeluaran</h2>
-        <p className="text-xs text-slate-500 mb-5">Perbandingan 6 bulan terakhir</p>
-        <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={monthlyData} margin={{ top: 5, right: 5, bottom: 5, left: 0 }} barCategoryGap="30%">
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-            <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false}
-              tickFormatter={(v) => v >= 1_000_000 ? `${(v/1_000_000).toFixed(0)}Jt` : `${(v/1000).toFixed(0)}Rb`} />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend wrapperStyle={{ fontSize: '12px', color: '#94a3b8', paddingTop: '12px' }} />
-            <Bar dataKey="Pemasukan" fill="#6366F1" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="Pengeluaran" fill="#EF4444" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Line + Pie */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Line Chart */}
-        <div className="glass-card p-5">
-          <h2 className="text-base font-semibold text-slate-100 mb-1">Tren Saldo</h2>
-          <p className="text-xs text-slate-500 mb-5">Akumulasi 6 bulan terakhir</p>
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={lineData} margin={{ top: 5, right: 5, bottom: 5, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false}
-                tickFormatter={(v) => v >= 1_000_000 ? `${(v/1_000_000).toFixed(0)}Jt` : `${(v/1000).toFixed(0)}Rb`} />
-              <Tooltip content={<CustomTooltip />} />
-              <Line type="monotone" dataKey="Saldo" stroke="#22C55E" strokeWidth={2.5}
-                dot={{ r: 4, fill: '#22C55E', strokeWidth: 0 }}
-                activeDot={{ r: 6, fill: '#22C55E' }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Pie Chart */}
-        <div className="glass-card p-5">
-          <h2 className="text-base font-semibold text-slate-100 mb-1">Kategori Pengeluaran</h2>
-          <p className="text-xs text-slate-500 mb-4">Bulan ini</p>
-          {catData.length > 0 ? (
-            <div className="flex gap-4">
-              <ResponsiveContainer width="50%" height={180}>
-                <PieChart>
-                  <Pie data={catData} cx="50%" cy="50%" innerRadius={40} outerRadius={70}
-                    paddingAngle={3} dataKey="value" strokeWidth={0}>
-                    {catData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="flex-1 space-y-2 overflow-y-auto max-h-[180px] pr-1">
+          {/* Category Detail — cards on mobile instead of table */}
+          {catData.length > 0 && (
+            <div className="card overflow-hidden">
+              <div className="p-4 sm:p-5" style={{ borderBottom: '1px solid var(--border)' }}>
+                <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Detail Per Kategori</h2>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Pengeluaran bulan ini</p>
+              </div>
+              <div>
                 {catData.map((d, i) => {
                   const total = catData.reduce((s, c) => s + c.value, 0)
-                  const pct = total > 0 ? ((d.value / total) * 100).toFixed(0) : 0
+                  const pct = total > 0 ? ((d.value / total) * 100).toFixed(1) : 0
+                  const info = getCategoryInfo(d.cat, 'expense')
                   return (
-                    <div key={d.name}>
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
-                          <span className="text-xs text-slate-400">{d.name}</span>
+                    <div key={d.name} className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 transition-colors"
+                      style={{ borderBottom: i < catData.length - 1 ? '1px solid var(--border)' : 'none' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--border)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                      <span className="text-lg w-7 text-center flex-shrink-0">{info.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm font-medium truncate pr-2" style={{ color: 'var(--text-primary)' }}>{d.name}</span>
+                          <span className="text-sm font-semibold tabular-nums flex-shrink-0" style={{ color: 'var(--text-primary)' }}>{formatCurrency(d.value, true)}</span>
                         </div>
-                        <span className="text-xs text-slate-500">{pct}%</span>
+                        <div className="progress-bar h-1.5">
+                          <div className="progress-fill" style={{ width: `${pct}%`, background: COLORS[i % COLORS.length] }} />
+                        </div>
                       </div>
-                      <div className="h-1 bg-dark-200 rounded-full">
-                        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: COLORS[i % COLORS.length] }} />
-                      </div>
+                      <span className="text-xs w-9 text-right flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{pct}%</span>
                     </div>
                   )
                 })}
               </div>
             </div>
-          ) : (
-            <div className="empty-state h-[180px]">
-              <p className="text-slate-500 text-sm">Belum ada pengeluaran bulan ini</p>
-            </div>
           )}
-        </div>
-      </div>
-
-      {/* Category Detail Table */}
-      {catData.length > 0 && (
-        <div className="glass-card overflow-hidden">
-          <div className="p-5 border-b border-white/5">
-            <h2 className="text-base font-semibold text-slate-100">Detail Per Kategori</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Pengeluaran bulan ini</p>
-          </div>
-          <div className="divide-y divide-white/5">
-            {catData.map((d, i) => {
-              const total = catData.reduce((s, c) => s + c.value, 0)
-              const pct = total > 0 ? ((d.value / total) * 100).toFixed(1) : 0
-              const info = getCategoryInfo(d.cat, 'expense')
-              return (
-                <div key={d.name} className="flex items-center gap-4 p-4 hover:bg-white/3 transition-colors">
-                  <span className="text-lg w-7 text-center">{info.icon}</span>
-                  <div className="flex-1">
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium text-slate-200">{d.name}</span>
-                      <span className="text-sm font-semibold text-slate-100 tabular-nums">{formatCurrency(d.value)}</span>
-                    </div>
-                    <div className="h-1.5 bg-dark-200 rounded-full">
-                      <div className="h-full rounded-full transition-all duration-700"
-                        style={{ width: `${pct}%`, background: COLORS[i % COLORS.length] }} />
-                    </div>
-                  </div>
-                  <span className="text-xs text-slate-500 w-10 text-right">{pct}%</span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+        </>
       )}
     </div>
   )
