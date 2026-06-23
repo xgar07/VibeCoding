@@ -13,6 +13,7 @@ import Savings from './pages/Savings'
 import Memos from './pages/Memos'
 import Statistics from './pages/Statistics'
 import Achievements from './pages/Achievements'
+import Insights from './pages/Insights'
 
 const ProtectedPage = ({ children }) => (
   <ProtectedRoute>
@@ -35,6 +36,7 @@ function App() {
             <Route path="/memos" element={<ProtectedPage><Memos /></ProtectedPage>} />
             <Route path="/statistics" element={<ProtectedPage><Statistics /></ProtectedPage>} />
             <Route path="/achievements" element={<ProtectedPage><Achievements /></ProtectedPage>} />
+            <Route path="/insights" element={<ProtectedPage><Insights /></ProtectedPage>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>

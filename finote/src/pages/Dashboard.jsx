@@ -263,17 +263,22 @@ const Dashboard = () => {
             </div>
           </div>
         ) : (
-          /* Health Score when no expense data */
-          <HealthScore score={health.score} status={health.status} breakdown={health.breakdown} />
+          <div className="card p-4 sm:p-5 animate-slide-up flex items-center justify-center" style={{ animationDelay: '80ms' }}>
+            <div className="text-center py-4">
+              <p className="text-3xl mb-2">🧾</p>
+              <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Belum ada pengeluaran</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Catat pengeluaran pertamamu</p>
+            </div>
+          </div>
         )}
       </div>
 
-      {/* Middle Row: Health + Insights + Monthly Report */}
+      {/* Insights + Health Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {pieData.length > 0 && (
-          <HealthScore score={health.score} status={health.status} breakdown={health.breakdown} />
-        )}
-        <div className={pieData.length > 0 ? 'lg:col-span-2' : 'lg:col-span-3'}>
+        {/* Health Score — always shown */}
+        <HealthScore score={health.score} status={health.status} breakdown={health.breakdown} />
+        {/* Smart Insights — 2 cols wide */}
+        <div className="lg:col-span-2">
           <SmartInsights insights={insights} />
         </div>
       </div>
