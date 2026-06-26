@@ -4,26 +4,27 @@ import { useState } from 'react'
 import Modal from './Modal'
 import TransactionForm from './TransactionForm'
 import { useTransactions } from '../../hooks/useTransactions'
-import { useSavings } from '../../hooks/useSavings'
-import { useMemos } from '../../hooks/useMemos'
 import toast from 'react-hot-toast'
 
 const AppLayout = ({ children }) => {
   const [fabAction, setFabAction] = useState(null)
   const [formLoading, setFormLoading] = useState(false)
   const { addTransaction } = useTransactions()
-  const { addGoal } = useSavings()
-  const { addMemo } = useMemos()
 
   const handleFabAction = (action) => setFabAction(action)
   const closeModal = () => setFabAction(null)
 
   const handleTxSubmit = async (data) => {
     setFormLoading(true)
-    const { error } = await addTransaction(data)
-    setFormLoading(false)
-    if (error) { toast.error('Gagal menyimpan') }
-    else { toast.success(data.type === 'income' ? 'Pemasukan ditambahkan! 💰' : 'Pengeluaran dicatat! 📝'); closeModal() }
+    try {
+      const { error } = await addTransaction(data)
+      if (error) { toast.error('Gagal menyimpan') }
+      else { toast.success(data.type === 'income' ? 'Pemasukan ditambahkan! 💰' : 'Pengeluaran dicatat! 📝'); closeModal() }
+    } catch {
+      toast.error('Terjadi kesalahan, coba lagi')
+    } finally {
+      setFormLoading(false)
+    }
   }
 
   return (

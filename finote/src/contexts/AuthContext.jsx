@@ -8,18 +8,27 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    let settled = false
+    const settle = () => { if (!settled) { settled = true; setLoading(false) } }
 
-    // Listen to auth changes
+    // Safety timeout — if Supabase takes >10s, unblock the app
+    const timeout = setTimeout(settle, 10_000)
+
+    // Get initial session
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        setUser(session?.user ?? null)
+        settle()
+      })
+      .catch(() => settle())  // Network offline or Supabase error — still unblock
+
+    // Listen to auth changes (also updates loading)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
+      settle()
     })
 
-    return () => subscription.unsubscribe()
+    return () => { clearTimeout(timeout); subscription.unsubscribe() }
   }, [])
 
   const signUp = async ({ email, password, name }) => {

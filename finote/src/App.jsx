@@ -14,6 +14,9 @@ import Memos from './pages/Memos'
 import Statistics from './pages/Statistics'
 import Achievements from './pages/Achievements'
 import Insights from './pages/Insights'
+import PWAInstallPrompt from './components/pwa/PWAInstallPrompt'
+import PWAUpdatePrompt from './components/pwa/PWAUpdatePrompt'
+import OfflineBanner from './components/pwa/OfflineBanner'
 
 const ProtectedPage = ({ children }) => (
   <ProtectedRoute>
@@ -26,6 +29,11 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
+          {/* PWA overlays — rendered outside router so always available */}
+          <OfflineBanner />
+          <PWAUpdatePrompt />
+          <PWAInstallPrompt />
+
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -56,7 +64,7 @@ function App() {
               padding: '12px 16px',
             },
             success: { iconTheme: { primary: '#22C55E', secondary: 'transparent' }, duration: 2500 },
-            error: { iconTheme: { primary: '#EF4444', secondary: 'transparent' }, duration: 4000 },
+            error:   { iconTheme: { primary: '#EF4444', secondary: 'transparent' }, duration: 4000 },
           }}
         />
       </AuthProvider>
