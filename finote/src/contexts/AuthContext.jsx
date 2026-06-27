@@ -48,7 +48,14 @@ export const AuthProvider = ({ children }) => {
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    // Immediately clear local state so UI reacts without waiting
+    setUser(null)
+    // Clear all Supabase-related keys from localStorage
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('sb-'))
+      .forEach(k => localStorage.removeItem(k))
+    // Call Supabase signOut (best-effort, may fail if offline)
+    await supabase.auth.signOut().catch(() => {})
   }
 
   return (

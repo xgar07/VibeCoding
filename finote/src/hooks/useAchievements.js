@@ -1,9 +1,22 @@
-import { useMemo, useEffect, useRef } from 'react'
+import { useMemo, useEffect, useState, useCallback } from 'react'
 import { useAllTransactions } from './useTransactions'
 import { useSavings } from './useSavings'
 import { useMemos } from './useMemos'
-import toast from 'react-hot-toast'
 import { parseISO, isWithinInterval, startOfMonth, endOfMonth, subMonths } from 'date-fns'
+import { useAuth } from '../contexts/AuthContext'
+
+// ── localStorage key scoped per user ─────────────────────────────────────────
+const seenKey = (uid) => `finote_seen_achievements_${uid ?? 'anon'}`
+
+const loadSeen = (uid) => {
+  try { return new Set(JSON.parse(localStorage.getItem(seenKey(uid)) || '[]')) }
+  catch { return new Set() }
+}
+
+const saveSeen = (uid, set) => {
+  try { localStorage.setItem(seenKey(uid), JSON.stringify([...set])) }
+  catch { /* storage full — ignore */ }
+}
 
 // ── Rarity tiers ─────────────────────────────────────────────────────────────
 export const RARITY = {
@@ -295,9 +308,18 @@ export const ACHIEVEMENTS = [
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
 export const useAchievements = () => {
+  const { user } = useAuth()
   const { allTransactions } = useAllTransactions()
   const { goals } = useSavings()
   const { memos } = useMemos()
+
+  // Seen IDs — persisted in localStorage per user so they survive page refresh / login
+  const [seenIds, setSeenIds] = useState(() => loadSeen(user?.id))
+
+  // Re-load from storage when user changes (login / logout)
+  useEffect(() => {
+    setSeenIds(loadSeen(user?.id))
+  }, [user?.id])
 
   const ctx = useMemo(() => ({ transactions: allTransactions, goals, memos }), [allTransactions, goals, memos])
 
@@ -312,26 +334,21 @@ export const useAchievements = () => {
     }))
   , [ctx])
 
-  // Track newly unlocked achievements & show toast
-  const prevUnlocked = useRef(new Set())
-  useEffect(() => {
-    achievements.forEach(a => {
-      if (a.unlocked && !prevUnlocked.current.has(a.id)) {
-        if (prevUnlocked.current.size > 0) {
-          // Only toast if we have previous state (not on initial load)
-          toast.success(
-            `${a.icon} ${a.title}\n+${a.xp} XP • ${a.rarityMeta.label}`,
-            { duration: 4500, position: 'top-right', icon: '🏆' }
-          )
-        }
-        prevUnlocked.current.add(a.id)
-      }
+  // Achievements that are unlocked but the user hasn't seen the popup for yet
+  const newlyUnlocked = useMemo(
+    () => achievements.filter(a => a.unlocked && !seenIds.has(a.id)),
+    [achievements, seenIds]
+  )
+
+  // Call this after the popup is shown so it never appears again
+  const markSeen = useCallback((id) => {
+    setSeenIds(prev => {
+      const next = new Set(prev)
+      next.add(id)
+      saveSeen(user?.id, next)
+      return next
     })
-    // On first run, populate set without toasting
-    if (prevUnlocked.current.size === 0) {
-      achievements.filter(a => a.unlocked).forEach(a => prevUnlocked.current.add(a.id))
-    }
-  }, [achievements])
+  }, [user?.id])
 
   const unlocked = achievements.filter(a => a.unlocked)
   const locked   = achievements.filter(a => !a.unlocked)
@@ -352,6 +369,8 @@ export const useAchievements = () => {
     unlockedCount: unlocked.length,
     totalXP,
     maxXP: ACHIEVEMENTS.reduce((s, a) => s + RARITY[a.rarity].xp + (a.xpBonus || 0), 0),
+    newlyUnlocked,
+    markSeen,
   }
 }
 

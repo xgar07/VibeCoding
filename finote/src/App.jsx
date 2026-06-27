@@ -17,6 +17,7 @@ import Insights from './pages/Insights'
 import PWAInstallPrompt from './components/pwa/PWAInstallPrompt'
 import PWAUpdatePrompt from './components/pwa/PWAUpdatePrompt'
 import OfflineBanner from './components/pwa/OfflineBanner'
+import AchievementToastSystem from './components/achievements/AchievementToast'
 
 const ProtectedPage = ({ children }) => (
   <ProtectedRoute>
@@ -29,10 +30,13 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
-          {/* PWA overlays — rendered outside router so always available */}
+          {/* PWA overlays */}
           <OfflineBanner />
           <PWAUpdatePrompt />
           <PWAInstallPrompt />
+
+          {/* Achievement notifications — app-wide, one at a time */}
+          <AchievementToastSystem />
 
           <Routes>
             <Route path="/login" element={<Login />} />

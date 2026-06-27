@@ -1,11 +1,10 @@
 import { useState, useEffect, useMemo, lazy, Suspense } from 'react'
 import { Link } from 'react-router-dom'
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, ArrowUpRight, ArrowDownRight, Clock, Trophy, Plus, ChevronRight } from 'lucide-react'
+import { TrendingUp, TrendingDown, Wallet, PiggyBank, ArrowUpRight, ArrowDownRight, Clock, Plus, ChevronRight } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { useAuth } from '../contexts/AuthContext'
 import { useAllTransactions } from '../hooks/useTransactions'
 import { useSavings } from '../hooks/useSavings'
-import { useAchievements } from '../hooks/useAchievements'
 import { formatCurrency } from '../utils/formatCurrency'
 import { formatDate, getLast6Months } from '../utils/dateHelpers'
 import { getCategoryInfo } from '../utils/categories'
@@ -14,7 +13,6 @@ import { StatCardSkeleton, ChartSkeleton } from '../components/common/SkeletonLo
 import HealthScore from '../components/dashboard/HealthScore'
 import SmartInsights from '../components/dashboard/SmartInsights'
 import MonthlyReport from '../components/dashboard/MonthlyReport'
-import AchievementCard from '../components/achievements/AchievementCard'
 import { parseISO, isWithinInterval, startOfMonth, endOfMonth, format } from 'date-fns'
 import { id } from 'date-fns/locale'
 
@@ -61,7 +59,6 @@ const Dashboard = () => {
   const { user } = useAuth()
   const { allTransactions, loading } = useAllTransactions()
   const { goals, totalSaved } = useSavings()
-  const { unlocked: unlockedAchievements } = useAchievements()
 
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Pengguna'
   const firstName = userName.split(' ')[0]
@@ -333,24 +330,6 @@ const Dashboard = () => {
             score={health.score}
             monthLabel={format(now, 'MMMM yyyy', { locale: id })}
           />
-
-          {/* Achievement snippet */}
-          {unlockedAchievements.length > 0 && (
-            <div className="card p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Trophy size={13} className="text-amber-400" />
-                  <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Pencapaian</span>
-                </div>
-                <Link to="/achievements" className="text-xs text-indigo-400 hover:underline">Lihat</Link>
-              </div>
-              <div className="space-y-2">
-                {unlockedAchievements.slice(-2).map(a => (
-                  <AchievementCard key={a.id} achievement={a} compact />
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Savings Goals */}
           {goals.length > 0 && (
