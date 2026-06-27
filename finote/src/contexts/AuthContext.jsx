@@ -48,18 +48,20 @@ export const AuthProvider = ({ children }) => {
   }
 
   const signOut = async () => {
-    // Immediately clear local state so UI reacts without waiting
     setUser(null)
-    // Clear all Supabase-related keys from localStorage
     Object.keys(localStorage)
       .filter(k => k.startsWith('sb-'))
       .forEach(k => localStorage.removeItem(k))
-    // Call Supabase signOut (best-effort, may fail if offline)
     await supabase.auth.signOut().catch(() => {})
   }
 
+  const resendVerification = async (email) => {
+    const { error } = await supabase.auth.resend({ type: 'signup', email })
+    return { error }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signUp, signIn, signOut, resendVerification }}>
       {children}
     </AuthContext.Provider>
   )

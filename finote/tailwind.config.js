@@ -43,6 +43,9 @@ export default {
         'bounce-soft': 'bounceSoft 0.5s ease-out',
         'fab-open': 'fabOpen 0.2s ease-out',
         'achievement-unlock': 'achievementUnlock 0.6s ease-out',
+        'pop-in': 'popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both',
+        'check-draw': 'checkDraw 0.4s ease-out 0.3s both',
+        'float-y': 'floatY 3s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
@@ -69,6 +72,20 @@ export default {
           '0%': { transform: 'scale(0.8)', opacity: '0' },
           '50%': { transform: 'scale(1.1)', opacity: '1' },
           '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+        popIn: {
+          '0%':   { transform: 'scale(0)', opacity: '0' },
+          '60%':  { transform: 'scale(1.15)', opacity: '1' },
+          '80%':  { transform: 'scale(0.92)' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+        checkDraw: {
+          '0%':   { strokeDashoffset: '100' },
+          '100%': { strokeDashoffset: '0' },
+        },
+        floatY: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%':      { transform: 'translateY(-6px)' },
         },
       },
       transitionDuration: { DEFAULT: '200ms' },
